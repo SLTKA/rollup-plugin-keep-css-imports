@@ -1,0 +1,57 @@
+{
+  "name": "rollup-plugin-keep-css-imports",
+  "version": "0.0.3",
+  "description": "Rollup plugin that allows to maintain the original structure of style imports without altering them during the bundling process",
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.mjs",
+  "exports": {
+    "import": "./dist/index.mjs",
+    "require": "./dist/index.cjs"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "rollup",
+    "rollup-plugin",
+    "css-modules",
+    "sass",
+    "scss",
+    "keep",
+    "preserve",
+    "imports"
+  ],
+  "homepage": "https://github.com/SLTKA/rollup-plugin-keep-css-imports",
+  "author": "Alexandr Yeskov",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SLTKA/rollup-plugin-keep-css-imports"
+  },
+  "bugs": {
+    "url": "https://github.com/SLTKA/rollup-plugin-keep-css-imports/issues"
+  },
+  "scripts": {
+    "prebuild": "rimraf -rf dist/*",
+    "build": "rollup -c",
+    "test": "mocha",
+    "pretest": "yarn build"
+  },
+  "devDependencies": {
+    "eslint": "^8.38.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-mocha": "^10.1.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "mocha": "^10.2.0",
+    "prettier": "^2.8.7",
+    "rimraf": "^2.6.3",
+    "rollup": "^3.10.0",
+    "sass": "^1.62.0"
+  },
+  "dependencies": {
+    "magic-string": "^0.30.0"
+  }
+}
