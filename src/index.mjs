@@ -96,13 +96,21 @@ function keepCssImports(options = {}) {
   return {
     name: PLUGIN_NAME,
     async resolveId(source, importer, resolveOptions) {
-      if (!importer || !(options.includeRegexp || /\.(?:s[ca]|c)ss$/).test(source)) {
+      if (!importer || !(options.includeRegexp || /\.(?:s[ca]|c)ss$/).test(source) || /\0/.test(source)) {
+        return null
+      }
+
+      // Test if we are in plugins loop and exits if it is
+      const { custom = {} } = resolveOptions
+      const { [PLUGIN_NAME]: { resolving: alreadyResolving } = {} } = custom
+      if (alreadyResolving) {
         return null
       }
 
       const resolved = await this.resolve(source, importer, {
         skipSelf: true,
         ...resolveOptions,
+        custom: { ...custom, [PLUGIN_NAME]: { ...custom[PLUGIN_NAME], resolving: true } },
       })
 
       if (!resolved || resolved.external) {
@@ -112,7 +120,7 @@ function keepCssImports(options = {}) {
       registerImporter(modulesWithCss, stylesToEmit, importer, resolved.id)
 
       return {
-        id: addImportAndGetNewId(allStyleImports, resolved.id) + KEY_EXT_STRING,
+        id: "\0" + addImportAndGetNewId(allStyleImports, resolved.id) + KEY_EXT_STRING,
         meta: { [PLUGIN_NAME]: { sourceId: resolved.id } },
         external: true,
       }
@@ -122,7 +130,7 @@ function keepCssImports(options = {}) {
 
       if (code && chunk.modules && Object.keys(chunk.modules).some((m) => modulesWithCss.has(m))) {
         const magicString = new MagicString(code)
-        const matchRegex = new RegExp(`([^"']+)${escapeRegex(KEY_EXT_STRING)}`, "g")
+        const matchRegex = new RegExp(`\0([^"']+)${escapeRegex(KEY_EXT_STRING)}`, "g")
         const moduleRoot = outputOptions.preserveModulesRoot || process.cwd()
         Array.from(code.matchAll(matchRegex))
           .reverse()
