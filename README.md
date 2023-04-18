@@ -189,6 +189,19 @@ export default {
 Specifies whether to generate source maps for the compiled CSS.
 Use `"inline"` to inline source maps into CSS files.
 
+### skipCurrentFolderPart
+
+|          |                         |
+| -------- | ----------------------- |
+| Type:    | `boolean` \| `RegExp` |
+| Default: | `false`                 |
+
+By default CSS paths will be prefixed with current folder mark `./`.
+To not do this with CSS files use `true` or specify RegExp filter.
+If RegExp filter matches `./` won't be added to the path.
+This option may be helpful if you have some issues with external
+modules imports from `node_modules`
+
 ### sassOptions
 
 |          |             |

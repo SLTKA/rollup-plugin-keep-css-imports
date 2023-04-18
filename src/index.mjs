@@ -78,6 +78,7 @@ function keepCssImports(options = {}) {
   const stylesToEmit = {}
   const modulesWithCss = new Set()
   const allStyleImports = []
+  const skipCurrentFolderPart = options.skipCurrentFolderPart || false
 
   let loadPaths = options.includePaths || ["node_modules/"]
   loadPaths.push(process.cwd())
@@ -134,7 +135,7 @@ function keepCssImports(options = {}) {
         const moduleRoot = outputOptions.preserveModulesRoot || process.cwd()
         Array.from(code.matchAll(matchRegex))
           .reverse()
-          .forEach((m) => updateMatchedImport(m, bundleOutDir, moduleRoot, chunk, magicString))
+          .forEach((m) => updateMatchedImport(m, bundleOutDir, moduleRoot, chunk, magicString, skipCurrentFolderPart))
 
         const result = { code: magicString.toString() }
         if (options.sourceMap) {
@@ -173,7 +174,7 @@ function keepCssImports(options = {}) {
     },
   }
 
-  function updateMatchedImport(m, bundleOutDir, moduleRoot, chunk, magicString) {
+  function updateMatchedImport(m, bundleOutDir, moduleRoot, chunk, magicString, skipCurrent) {
     const importId = m[0]
     const assetId = allStyleImports[m[1]]
     if (!assetId || !stylesToEmit[assetId]) {
@@ -182,16 +183,27 @@ function keepCssImports(options = {}) {
     const start = m.index
     const end = start + importId.length
     const assetOutput = resolveOutputPath(bundleOutDir, assetId, moduleRoot)
-    const updatedImport = path
+    let updatedImport = path
       .relative(path.dirname(path.resolve(bundleOutDir, chunk.fileName)), assetOutput)
       .replace(/\\/g, "/")
+
+    if (
+      (!skipCurrent || (skipCurrent instanceof RegExp && !skipCurrent.test(updatedImport))) &&
+      !updatedImport.startsWith("./") &&
+      !updatedImport.startsWith("../") &&
+      !updatedImport.match(/^[a-zA-Z]:/)
+    ) {
+      updatedImport = "./" + updatedImport
+    }
 
     stylesToEmit[assetId].output = path.relative(path.resolve(bundleOutDir), assetOutput)
 
     magicString.overwrite(start, end, updatedImport)
     if (chunk.importedBindings[importId]) {
       chunk.importedBindings[updatedImport] = chunk.importedBindings[importId]
-      chunk.importedBindings[importId]
+      if (updatedImport !== importId) {
+        delete chunk.importedBindings[importId]
+      }
     }
     const importIndex = chunk.imports.indexOf(importId)
     if (~importIndex) {

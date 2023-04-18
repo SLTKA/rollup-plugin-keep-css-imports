@@ -35,9 +35,9 @@ describe("keepCssImportsPlugin", () => {
     assert.ok(emittedCSS.trim().length > 0, "Emitted CSS should not be empty")
     assert.ok(emittedSCSS.trim().length > 0, "Emitted SCSS should not be empty")
 
-    assert.ok(emittedJS.includes("import 'sample.css';"), "Emitted JS should have the correct imports")
+    assert.ok(emittedJS.includes("import './sample.css';"), "Emitted JS should have the correct imports")
     assert.ok(
-      emittedJS.includes("import styles from 'subfolder/sample.module.css';"),
+      emittedJS.includes("import styles from './subfolder/sample.module.css';"),
       "Emitted JS should have the correct imports",
     )
 
