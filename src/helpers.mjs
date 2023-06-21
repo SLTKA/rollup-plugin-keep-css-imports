@@ -15,15 +15,15 @@ export const assertLocation = (outDir, assetPath) => {
   }
 }
 
-export const ensureSourceMap = ({ css, map }, sourceMap, fileName, onEmit) => {
+export const ensureSourceMap = ({ css, map }, includeSourceMap, fileName, onEmit) => {
   if (map) {
-    if (sourceMap === "inline") {
+    if (includeSourceMap === "inline") {
       css += `\n/*# sourceMappingURL=data:application/json;base64,${Buffer.from(map, "utf8").toString("base64")}*/`
-    } else if (sourceMap === true) {
+    } else if (includeSourceMap === true) {
       css += `\n/*# sourceMappingURL=${path.basename(fileName)}.map */`
     }
 
-    if (sourceMap === true) {
+    if (includeSourceMap === true) {
       onEmit({
         type: "asset",
         fileName: fileName + ".map",
@@ -34,13 +34,13 @@ export const ensureSourceMap = ({ css, map }, sourceMap, fileName, onEmit) => {
   return css
 }
 
-export const formatProcessedToCSS = (input) =>
+export const formatProcessedToCSS = (input, sourceMap) =>
   typeof input === "string"
     ? { css: input, map: "" }
     : typeof input === "object"
     ? {
         css: input.css,
-        map: typeof input.map === "object" ? JSON.stringify(input.map) : input.map,
+        map: !sourceMap ? "" : typeof input.map === "object" ? JSON.stringify(input.map) : input.map,
       }
     : input
 

@@ -1,61 +1,12 @@
 import path from "path"
 import { readFile } from "fs/promises"
 import MagicString from "magic-string"
-import {
-  assertDuplicates,
-  assertLocation,
-  ensureSourceMap,
-  escapeRegex,
-  formatProcessedToCSS,
-  requireSass,
-} from "./helpers.mjs"
+import { assertDuplicates, assertLocation, ensureSourceMap, escapeRegex } from "./helpers.mjs"
+import { compileSass } from "./compileSass.mjs"
 
 const PLUGIN_NAME = "keep-css-imports"
 const KEY_EXT_STRING = ".[keep-css-imports-plugin-ext]"
-
-const compileSass = async (
-  sassPath,
-  { stylesToEmit, outExt, sass, postProcessor, loadPaths, sourceMap, sassOptions },
-) => {
-  if (!sassPath) {
-    return { css: "", map: "" }
-  }
-
-  let sassProcessor = sass || (await requireSass())
-  if ("default" in sassProcessor && !("compileAsync" in sassProcessor)) {
-    sassProcessor = sassProcessor.default
-  }
-  const compiled = await sassProcessor.compileAsync(sassPath, {
-    loadPaths,
-    style: "expanded",
-    sourceMap: !!sourceMap,
-    sourceMapIncludeSources: !!sourceMap,
-    ...(sassOptions || []),
-  })
-  const css = compiled.css.toString()
-  const map = compiled.sourceMap
-    ? typeof compiled.sourceMap === "object"
-      ? JSON.stringify(compiled.sourceMap)
-      : compiled.sourceMap
-    : ""
-
-  if (typeof postProcessor === "function") {
-    const result = await postProcessor(css, map, stylesToEmit)
-
-    return formatProcessedToCSS(
-      typeof result?.process === "function" // If PostCSS compatible result
-        ? await Promise.resolve(
-            result.process(css, {
-              from: sassPath,
-              to: path.parse(sassPath).name + outExt,
-              map: map ? { prev: map, inline: false } : null,
-            }),
-          )
-        : result,
-    )
-  }
-  return { css, map }
-}
+const FILE_URL_PREFIX = new URL("file://").toString()
 
 const createErrorMessage = (message) => `[${PLUGIN_NAME}] ${message}`
 
@@ -64,11 +15,26 @@ const addImportAndGetNewId = (importsArray, resolvedId) => {
   return !~moduleIndex ? importsArray.push(resolvedId) - 1 : moduleIndex
 }
 
-const registerImporter = (modulesWithCss, stylesMap, importer, resolvedId) => {
-  modulesWithCss.add(importer)
-
+const ensureStylesInfo = (stylesMap, importer, resolvedId) => {
   stylesMap[resolvedId] = stylesMap[resolvedId] || { importers: [] }
   stylesMap[resolvedId].importers.push(importer)
+
+  return stylesMap[resolvedId]
+}
+
+const ensureCodeAndWatchList = async (filePath, stylesInfo, isWatch, compilerOptions) => {
+  const outWatchList = []
+
+  if (filePath.endsWith(".css")) {
+    stylesInfo.css = await readFile(filePath, "utf8")
+  } else {
+    const { css, map } = await compileSass(filePath, isWatch ? outWatchList : undefined, compilerOptions)
+    stylesInfo.css = css
+    stylesInfo.map = map
+  }
+  outWatchList.push(filePath)
+
+  stylesInfo.watchList = outWatchList.map((watchFile) => path.resolve(watchFile.replace(FILE_URL_PREFIX, "")))
 }
 
 function keepCssImports(options = {}) {
@@ -118,13 +84,43 @@ function keepCssImports(options = {}) {
         return resolved
       }
 
-      registerImporter(modulesWithCss, stylesToEmit, importer, resolved.id)
+      modulesWithCss.add(importer)
+      const styleInfo = ensureStylesInfo(stylesToEmit, importer, resolved.id)
+
+      await ensureCodeAndWatchList(resolved.id, styleInfo, this.meta.watchMode, compilerOptions)
+      styleInfo.watchList.forEach((watchFile) => {
+        this.addWatchFile(watchFile)
+      })
 
       return {
         id: "\0" + addImportAndGetNewId(allStyleImports, resolved.id) + KEY_EXT_STRING,
         meta: { [PLUGIN_NAME]: { sourceId: resolved.id } },
         external: true,
       }
+    },
+    buildStart() {
+      // Every rebuild will refresh watcher, so we need to reattach
+      if (this.meta.watchMode) {
+        const allWatched = this.getWatchFiles()
+        Object.values(stylesToEmit).forEach((styleInfo) =>
+          styleInfo.watchList.forEach((watchFile) => {
+            if (!allWatched.find((watched) => path.normalize(watched) === path.normalize(watchFile))) {
+              this.addWatchFile(watchFile)
+            }
+          }),
+        )
+      }
+    },
+    async watchChange(id) {
+      const resolvedId = path.resolve(id)
+      const filesToUpdate = Object.entries(stylesToEmit).filter(([, styleInfo]) =>
+        styleInfo.watchList.includes(resolvedId),
+      )
+      await Promise.all(
+        filesToUpdate.map(([fileName, styleInfo]) =>
+          ensureCodeAndWatchList(fileName, styleInfo, this.meta.watchMode, compilerOptions),
+        ),
+      )
     },
     renderChunk(code, chunk, outputOptions) {
       const bundleOutDir = path.resolve(outputOptions.dir || path.dirname(outputOptions.file))
@@ -138,15 +134,15 @@ function keepCssImports(options = {}) {
           .forEach((m) => updateMatchedImport(m, bundleOutDir, moduleRoot, chunk, magicString, skipCurrentFolderPart))
 
         const result = { code: magicString.toString() }
-        if (options.sourceMap) {
-          result.map = magicString.generateMap({ hires: true })
-        }
+        // Always output map as Rollup requires to provide it any way, then decides if need to output it
+        result.map = magicString.generateMap({ hires: true })
+
         return result
       }
 
       return null
     },
-    async generateBundle(_, __, isWrite) {
+    generateBundle(_, __, isWrite) {
       if (!isWrite) {
         return
       }
@@ -154,16 +150,12 @@ function keepCssImports(options = {}) {
       assertDuplicates(stylesToEmit)
 
       for (const file in stylesToEmit) {
-        const fileName = stylesToEmit[file].output
+        const stylesInfo = stylesToEmit[file]
+        const fileName = stylesInfo.output
 
         const source = file.endsWith(".css")
-          ? await readFile(file, "utf8")
-          : ensureSourceMap(
-              await compileSass(file, compilerOptions),
-              options.sourceMap || options.sassOptions?.sourceMap,
-              fileName,
-              this.emitFile,
-            )
+          ? stylesInfo.css
+          : ensureSourceMap(stylesInfo, options.sourceMap || options.sassOptions?.sourceMap, fileName, this.emitFile)
 
         this.emitFile({
           type: "asset",

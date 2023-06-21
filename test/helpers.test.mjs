@@ -65,7 +65,25 @@ describe("Helpers", () => {
         css: "css string",
         map: JSON.stringify(input.map),
       }
-      const result = formatProcessedToCSS(input)
+      const result = formatProcessedToCSS(input, true)
+      assert.deepStrictEqual(result, expected)
+    })
+
+    it("should return an object with css only when given an object and sourceMap false", () => {
+      const input = {
+        css: "css string",
+        map: {
+          version: 3,
+          sources: ["source.scss"],
+          names: [],
+          mappings: "AAAA",
+        },
+      }
+      const expected = {
+        css: "css string",
+        map: "",
+      }
+      const result = formatProcessedToCSS(input, false)
       assert.deepStrictEqual(result, expected)
     })
   })
