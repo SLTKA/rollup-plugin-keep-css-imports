@@ -1,6 +1,6 @@
 {
   "name": "rollup-plugin-keep-css-imports",
-  "version": "1.0.0-rc2",
+  "version": "1.0.0",
   "description": "Rollup plugin that allows to maintain the original structure of style imports without altering them during the bundling process",
   "main": "dist/index.cjs",
   "module": "dist/index.mjs",

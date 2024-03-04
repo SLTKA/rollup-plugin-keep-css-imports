@@ -221,4 +221,4 @@ compiler.
 
 [MIT](./LICENSE)
 
-Copyright (c) 2023 Alexandr Yeskov
+Copyright (c) 2024 Alexandr Yeskov
