@@ -1,6 +1,6 @@
-import assert from "assert"
+import * as assert from "assert"
 import keepCssImportsPlugin from "../dist/index.mjs" //Testing built version
-import { rollup } from "rollup"
+import { OutputOptions, rollup } from "rollup"
 import * as fs from "fs/promises"
 import * as path from "path"
 
@@ -9,7 +9,7 @@ const inputOptions = {
   plugins: [keepCssImportsPlugin()],
 }
 
-const outputOptions = {
+const outputOptions: OutputOptions = {
   file: "test/output/bundle.js",
   format: "esm",
   preserveModulesRoot: "test/input",

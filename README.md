@@ -56,6 +56,15 @@ export default {
 
 ## Options
 
+### includeRegexp
+
+|          |                      |
+| -------- | -------------------- |
+| Type:    | `RegExp`             |
+| Default: | `/\.(?:s[ca]|c)ss$/` |
+
+Regular expression to test if an import should be processed by this plugin
+
 ### outputExt
 
 |          |          |
@@ -140,6 +149,16 @@ An optional object that allows you to provide a custom SASS implementation,
 such as Dart SASS or Node SASS. If not specified you must install Dart SASS
 (`npm install sass --save-dev` / `yarn add sass --dev`)
 
+### sassOptions
+
+|          |             |
+| -------- | ----------- |
+| Type:    | `Object`    |
+| Default: | `undefined` |
+
+An optional object that allows to provide additional options for the SASS
+compiler.
+
 ### postProcessor
 
 |          |             |
@@ -197,20 +216,10 @@ Use `"inline"` to inline source maps into CSS files.
 | Default: | `false`                 |
 
 By default CSS paths will be prefixed with current folder mark `./`.
-To not do this with CSS files use `true` or specify RegExp filter.
+To avoid this for CSS files use `true` or specify RegExp filter.
 If RegExp filter matches `./` won't be added to the path.
 This option may be helpful if you have some issues with external
 modules imports from `node_modules`
-
-### sassOptions
-
-|          |             |
-| -------- | ----------- |
-| Type:    | `Object`    |
-| Default: | `undefined` |
-
-An optional object that allows to provide additional options for the SASS
-compiler.
 
 ## Notes
 

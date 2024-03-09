@@ -1,8 +1,9 @@
 v1.0.0
-  - Use rollup v4 to bundle project
-  - Compartibility with rollup 3 and 4
+  - Compatibility with rollup 3 and 4
   - Update dependencies
+  - Refactor to use TypeScript
+  - Use rollup v4 to bundle project
   - Add CHANGELOG
 
 v0.0.6
-  - Add support for watching CSS and SASS files
+  - Add watch support for CSS and SASS files

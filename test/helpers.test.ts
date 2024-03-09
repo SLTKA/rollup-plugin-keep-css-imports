@@ -1,12 +1,6 @@
-import assert from "assert"
-import {
-  escapeRegex,
-  assertDuplicates,
-  assertLocation,
-  ensureSourceMap,
-  formatProcessedToCSS,
-} from "../src/helpers.mjs"
-import path from "path"
+import * as assert from "assert"
+import { escapeRegex, assertDuplicates, assertLocation, ensureSourceMap, formatProcessedToCSS } from "../src/helpers"
+import * as path from "path"
 
 describe("Helpers", () => {
   describe("escapeRegex", () => {
@@ -21,8 +15,8 @@ describe("Helpers", () => {
   describe("assertDuplicates", () => {
     it("should throw an error for duplicate output paths", () => {
       const stylesToEmit = {
-        "file1.scss": { output: "output/file1.css" },
-        "file2.scss": { output: "output/file1.css" },
+        "file1.scss": { output: "output/file1.css", importers: [], watchList: [] },
+        "file2.scss": { output: "output/file1.css", importers: [], watchList: [] },
       }
 
       assert.throws(() => assertDuplicates(stylesToEmit), {
@@ -32,8 +26,8 @@ describe("Helpers", () => {
 
     it("should not throw an error for unique output paths", () => {
       const stylesToEmit = {
-        "file1.scss": { output: "output/file1.css" },
-        "file2.scss": { output: "output/file2.css" },
+        "file1.scss": { output: "output/file1.css", importers: [], watchList: [] },
+        "file2.scss": { output: "output/file2.css", importers: [], watchList: [] },
       }
 
       assert.doesNotThrow(() => assertDuplicates(stylesToEmit))
@@ -47,7 +41,7 @@ describe("Helpers", () => {
         css: "string",
         map: "",
       }
-      const result = formatProcessedToCSS(input)
+      const result = formatProcessedToCSS(input, false)
       assert.deepStrictEqual(result, expected)
     })
 
@@ -112,7 +106,7 @@ describe("Helpers", () => {
     const fileName = "test.css"
 
     it('should append an inline sourceMappingURL to the CSS when sourceMap is "inline"', () => {
-      const onEmit = () => {}
+      const onEmit = () => ""
       const result = ensureSourceMap({ css, map }, "inline", fileName, onEmit)
       assert.strictEqual(
         result,
@@ -129,6 +123,7 @@ describe("Helpers", () => {
           fileName: `${fileName}.map`,
           source: map,
         })
+        return ""
       }
       const result = ensureSourceMap({ css, map }, true, fileName, onEmit)
       assert.strictEqual(result, `${css}\n/*# sourceMappingURL=${path.basename(fileName)}.map */`)
@@ -136,7 +131,7 @@ describe("Helpers", () => {
     })
 
     it("should not append sourceMappingURL to the CSS when sourceMap is false or undefined", () => {
-      const onEmit = () => {}
+      const onEmit = () => ""
       const result1 = ensureSourceMap({ css, map }, false, fileName, onEmit)
       const result2 = ensureSourceMap({ css, map }, undefined, fileName, onEmit)
       assert.strictEqual(result1, css)
