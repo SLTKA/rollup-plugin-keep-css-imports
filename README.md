@@ -56,7 +56,9 @@ export default {
 
 ## Options
 
-### includeRegexp
+### Input Options
+
+**includeRegexp**
 
 |          |                      |
 | -------- | -------------------- |
@@ -65,7 +67,9 @@ export default {
 
 Regular expression to test if an import should be processed by this plugin
 
-### outputExt
+### OutputOptions
+
+**outputExt**
 
 |          |          |
 | -------- | -------- |
@@ -75,7 +79,7 @@ Regular expression to test if an import should be processed by this plugin
 Specifies the file extension for the output CSS files. This is typically ".css"
 but can be changed if needed.
 
-### outputDir
+**outputDir**
 
 |          |          |
 | -------- | -------- |
@@ -85,7 +89,7 @@ but can be changed if needed.
 Specifies the output directory for the generated CSS files. Relative to Rollup
 output folder.
 
-### outputPath
+**outputPath**
 
 |          |                                    |
 | -------- | ---------------------------------- |
@@ -97,7 +101,7 @@ The default value, "keep", preserves the original file paths. It is also
 possible to provide a custom function to generate output paths based on the
 input file.
 
-**Example:**
+**_Example:_**
 
 ```js
 import keepCssImports from "rollup-plugin-keep-css-imports"
@@ -129,7 +133,32 @@ export default {
 }
 ```
 
-### includePaths
+**sourceMap**
+
+|          |                         |
+| -------- | ----------------------- |
+| Type:    | `boolean` \| `"inline"` |
+| Default: | `false`                 |
+
+Specifies whether to generate source maps for the compiled CSS.
+Use `"inline"` to inline source maps into CSS files.
+
+**skipCurrentFolderPart**
+
+|          |                         |
+| -------- | ----------------------- |
+| Type:    | `boolean` \| `RegExp` |
+| Default: | `false`                 |
+
+By default CSS paths will be prefixed with current folder mark `./`.
+To avoid this for CSS files use `true` or specify RegExp filter.
+If RegExp filter matches `./` won't be added to the path.
+This option may be helpful if you have some issues with external
+modules imports from `node_modules`
+
+### Extensions' Options
+
+**includePaths**
 
 |          |                     |
 | -------- | ------------------- |
@@ -138,7 +167,7 @@ export default {
 
 Specifies the list of include paths for SASS to search when resolving imports.
 
-### sass
+**sass**
 
 |          |                 |
 | -------- | --------------- |
@@ -149,7 +178,7 @@ An optional object that allows you to provide a custom SASS implementation,
 such as Dart SASS or Node SASS. If not specified you must install Dart SASS
 (`npm install sass --save-dev` / `yarn add sass --dev`)
 
-### sassOptions
+**sassOptions**
 
 |          |             |
 | -------- | ----------- |
@@ -159,7 +188,7 @@ such as Dart SASS or Node SASS. If not specified you must install Dart SASS
 An optional object that allows to provide additional options for the SASS
 compiler.
 
-### postProcessor
+**postProcessor**
 
 |          |             |
 | -------- | ----------- |
@@ -169,7 +198,7 @@ compiler.
 An optional function that allows you to perform additional processing on the
 generated CSS, such as applying PostCSS plugins.
 
-**Example:**
+**_Example:_**
 Use PostCSS with the `postcss-url` plugin to inline the URLs in the CSS files:
 
 ```js
@@ -198,33 +227,14 @@ export default {
 }
 ```
 
-### sourceMap
-
-|          |                         |
-| -------- | ----------------------- |
-| Type:    | `boolean` \| `"inline"` |
-| Default: | `false`                 |
-
-Specifies whether to generate source maps for the compiled CSS.
-Use `"inline"` to inline source maps into CSS files.
-
-### skipCurrentFolderPart
-
-|          |                         |
-| -------- | ----------------------- |
-| Type:    | `boolean` \| `RegExp` |
-| Default: | `false`                 |
-
-By default CSS paths will be prefixed with current folder mark `./`.
-To avoid this for CSS files use `true` or specify RegExp filter.
-If RegExp filter matches `./` won't be added to the path.
-This option may be helpful if you have some issues with external
-modules imports from `node_modules`
-
 ## Notes
 
 - Plugin reads `preserveModulesRoot` property of Rollup output settings, so it
   can be used to make output tree depth smaller
+
+## Supported Rollup versions
+
+Tested with v3 and v4
 
 ## License
 
